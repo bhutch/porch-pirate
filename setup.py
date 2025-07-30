@@ -17,5 +17,5 @@ setup(name='porch-pirate',
       url='https://github.com/mandconsultinggroup/porch-pirate',
       packages=['porchpirate'],
       scripts=['bin/porch-pirate'],
-      install_requires=['requests']
+      install_requires=['curl_cffi']
      )

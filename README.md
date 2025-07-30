@@ -20,6 +20,26 @@ Porch Pirate enumerates and presents sensitive results (global secrets, unique h
 python3 -m pip install porch-pirate
 ```
 
+## Recent Technical Changes
+
+### Migration to curl_cffi
+
+This fork of Porch Pirate uses `curl_cffi` instead of `requests` to bypass Cloudflare protection mechanisms. Specifically, Cloudflare was blocking POST requests used with the `--dump` comand.
+
+#### Browser Impersonation
+
+You can specify which browser fingerprint to impersonate using the `--impersonate-browser` flag:
+
+```bash
+porch-pirate -s "coca-cola.com" --impersonate-browser chrome136
+```
+
+**Supported browsers**: chrome99, chrome100, chrome101, chrome104, chrome107, chrome110, chrome116, chrome119, chrome120, chrome123, chrome124, chrome126, chrome127, chrome131, chrome136, edge99, edge101, edge122, edge127, safari15_3, safari15_5, safari17_0, safari17_2_1, safari18_0
+
+### Search Limit Changes
+
+The default search limit has been reduced from 100 to 25 results, which is the maximum supported.
+
 ## Using the client
 
 ![](https://i.imgur.com/t2PJ2jF.png)

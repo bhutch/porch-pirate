@@ -1,6 +1,5 @@
-import requests
+import curl_cffi
 import warnings
-from urllib3.exceptions import InsecureRequestWarning
 
 # cooked up by
 # Dominik Penner (@zer0pwn)
@@ -19,8 +18,7 @@ BOLD    = '\033[1m'
 END     = '\033[0m'
 
 class porchpirate():
-    warnings.simplefilter('ignore', InsecureRequestWarning)
-    def __init__(self, proxy=None):
+    def __init__(self, proxy=None, impersonate_browser='chrome136'):
         self.WS_API_URL = 'https://www.postman.com/_api/ws/proxy'
         self.WORKSPACE_API_URL = 'https://www.postman.com/_api/workspace'
         self.INDICE_KEYWORDS = {
@@ -31,6 +29,7 @@ class porchpirate():
             "flow": "flow.flow",
             "team": "apinetwork.team"
         }
+        self.impersonate_browser = impersonate_browser
         if proxy is not None:
             self.proxies = {
                 'http': 'http://' + proxy,
@@ -234,15 +233,14 @@ class porchpirate():
             user_id = entity['friendly']
             print(f" - {YELLOW}{user_name}{END}{END} ({user_id}{END})")
 
-    def search(self, term, page=None, indice=None, limit=100):
-        if limit != 100:
+    def search(self, term, page=None, indice=None, limit=25):
+        if limit != 25:
             limit = int(limit)
         if page is not None:
             page = int(page)*limit
         else:
             page = 0
         search_headers = {
-            "Content-Type": "application/json",
             "X-App-Version": "10.18.8-230926-0808",
             "X-Entity-Team-Id": "0",
             "Origin": "https://www.postman.com",
@@ -280,12 +278,11 @@ class porchpirate():
                 "domain": "public"
             }
         }
-        response = requests.post(self.WS_API_URL, headers=search_headers, json=search_data, proxies=self.proxies, verify=False)
+        response = curl_cffi.post(self.WS_API_URL, headers=search_headers, json=search_data, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
 
     def search_stats(self, term):
         stat_headers = {
-            "Content-Type": "application/json",
             "X-App-Version": "10.18.8-230926-0808",
             "X-Entity-Team-Id": "0",
             "Origin": "https://www.postman.com",
@@ -308,7 +305,7 @@ class porchpirate():
                 "domain":"public"
             }
         }
-        response = requests.post(self.WS_API_URL, headers=stat_headers, json=stat_data, proxies=self.proxies, verify=False)
+        response = curl_cffi.post(self.WS_API_URL, headers=stat_headers, json=stat_data, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
     
     def build_curl_request(self, request):
@@ -331,109 +328,91 @@ class porchpirate():
         return curl_request
 
     def workspace(self, id):
-        response = requests.get(f'https://www.postman.com/_api/workspace/{id}', proxies=self.proxies, verify=False)
+        response = curl_cffi.get(f'https://www.postman.com/_api/workspace/{id}', proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
     
     def workspace_globals(self, id):
-        response = requests.get(f'https://www.postman.com/_api/workspace/{id}/globals', proxies=self.proxies, verify=False)
+        response = curl_cffi.get(f'https://www.postman.com/_api/workspace/{id}/globals', proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
     
     def collection(self, id):
-        response = requests.get(f'https://www.postman.com/_api/collection/{id}', proxies=self.proxies, verify=False)
+        response = curl_cffi.get(f'https://www.postman.com/_api/collection/{id}', proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
     
     def collections(self, id):
-        response = requests.post(f'https://www.postman.com/_api/list/collection?workspace={id}', proxies=self.proxies, verify=False)
+        # Send empty JSON body to force curl_cffi to use Content-Type: application/json
+        # Without this, curl_cffi defaults to Content-Type: application/x-www-form-urlencoded which
+        # causes 504 gateway timeouts and other issues with Cloudflare protection
+        response = curl_cffi.post(f'https://www.postman.com/_api/list/collection?workspace={id}', json={}, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
 
     def request(self, id):
-        response = requests.get(f'https://www.postman.com/_api/request/{id}', proxies=self.proxies, verify=False)
+        response = curl_cffi.get(f'https://www.postman.com/_api/request/{id}', proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
     
     def environment(self, id):
-        response = requests.get(f'https://www.postman.com/_api/environment/{id}', proxies=self.proxies, verify=False)
+        response = curl_cffi.get(f'https://www.postman.com/_api/environment/{id}', proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
     
     def profile(self, handle):
-        header = {
-            'Content-Type': 'application/json'
-        }
         postdata = {
             "path": f'/api/profiles/{handle}',
             "service": "ums",
             "method": "get"
         }
-        response = requests.post(self.WS_API_URL, json=postdata, headers=header, proxies=self.proxies, verify=False)
+        response = curl_cffi.post(self.WS_API_URL, json=postdata, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
     
     def user(self, userid):
-        headers = {
-            'Content-Type': 'application/json'
-        }
         postdata = {
             "service":"publishing",
             "method":"get",
             "path":f"/v1/api/profile/user/{userid}"
         }
-        response = requests.post(self.WS_API_URL, json=postdata, headers=headers, proxies=self.proxies, verify=False)
+        response = curl_cffi.post(self.WS_API_URL, json=postdata, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text   
     
     def user_collections(self, userid):
-        headers = {
-            'Content-Type': 'application/json'
-        }
         postdata = {
             "service":"publishing",
             "method":"get",
             "path":f"/v1/api/profile/user/{userid}?requestedData=collection"
         }
-        response = requests.post(self.WS_API_URL, json=postdata, headers=headers, proxies=self.proxies, verify=False)
+        response = curl_cffi.post(self.WS_API_URL, json=postdata, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
 
     def user_workspaces(self, userid):
-        headers = {
-            'Content-Type': 'application/json'
-        }
         postdata = {
             "service":"publishing",
             "method":"get",
             "path":f"/v1/api/profile/user/{userid}?requestedData=workspace"
         }
-        response = requests.post(self.WS_API_URL, json=postdata, headers=headers, proxies=self.proxies, verify=False)
+        response = curl_cffi.post(self.WS_API_URL, json=postdata, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
 
     def team(self, teamid):
-        headers = {
-            'Content-Type': 'application/json'
-        }
         postdata = {
             "service":"publishing",
             "method":"get",
             "path":f"/v1/api/profile/team/{teamid}"
         }
-        response = requests.post(self.WS_API_URL, json=postdata, headers=headers, proxies=self.proxies, verify=False)
+        response = curl_cffi.post(self.WS_API_URL, json=postdata, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
     
     def team_collections(self, teamid):
-        headers = {
-            'Content-Type': 'application/json'
-        }
         postdata = {
             "service":"publishing",
             "method":"get",
             "path":f"/v1/api/profile/team/{teamid}?requestedData=collection"
         }
-        response = requests.post(self.WS_API_URL, json=postdata, headers=headers, proxies=self.proxies, verify=False)
+        response = curl_cffi.post(self.WS_API_URL, json=postdata, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
 
     def team_workspaces(self, teamid):
-        headers = {
-            'Content-Type': 'application/json'
-        }
         postdata = {
             "service":"publishing",
             "method":"get",
             "path":f"/v1/api/profile/team/{teamid}?requestedData=workspace"
         }
-        response = requests.post(self.WS_API_URL, json=postdata, headers=headers, proxies=self.proxies, verify=False)
+        response = curl_cffi.post(self.WS_API_URL, json=postdata, proxies=self.proxies, verify=False, impersonate=self.impersonate_browser)
         return response.text
